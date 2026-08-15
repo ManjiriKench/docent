@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="80" height="80" fill="none">
+  <!-- Soft Glow / Background -->
+  <circle cx="50" cy="50" r="44" fill="#3B82F6" fill-opacity="0.12" stroke="#3B82F6" stroke-width="2" stroke-dasharray="3 3"/>
+  
+  <!-- Docent Character Body -->
+  <path d="M28 68 C28 45, 72 45, 72 68 C72 82, 28 82, 28 68 Z" fill="#2563EB"/>
+  
+  <!-- Collar / Shirt Detail -->
+  <path d="M42 62 L50 72 L58 62" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="50" cy="76" r="1.5" fill="#FBBF24"/>
+
+  <!-- Head -->
+  <circle cx="50" cy="42" r="20" fill="#1E293B"/>
+
+  <!-- Face / Glasses -->
+  <!-- Left Eye -->
+  <circle cx="43" cy="42" r="6" fill="#0F172A" stroke="#F59E0B" stroke-width="2"/>
+  <circle cx="44" cy="41" r="2" fill="#FFFFFF"/>
+  
+  <!-- Right Eye (Monocle) -->
+  <circle cx="57" cy="42" r="6" fill="#0F172A" stroke="#F59E0B" stroke-width="2.5"/>
+  <circle cx="58" cy="41" r="2" fill="#FFFFFF"/>
+  <path d="M63 44 C67 50, 68 58, 62 64" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Glasses Bridge -->
+  <path d="M49 42 Q50 39 51 42" stroke="#F59E0B" stroke-width="2" fill="none"/>
+
+  <!-- Museum Guide Cap -->
+  <path d="M30 32 Q50 20 70 32 L72 36 L28 36 Z" fill="#1E3A8A"/>
+  <path d="M24 36 Q50 32 76 36 L74 39 Q50 35 26 39 Z" fill="#F59E0B"/>
+  <circle cx="50" cy="24" r="3" fill="#FBBF24"/>
+
+  <!-- Smile / Expression -->
+  <path d="M46 51 Q50 54 54 51" stroke="#E2E8F0" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+</svg>

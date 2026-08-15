@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src {{cspSource}} https: data:; style-src {{cspSource}} 'unsafe-inline'; script-src 'nonce-{{nonce}}';">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docent Codebase Tour</title>
+  <link rel="stylesheet" href="{{cssUri}}">
+</head>
+<body>
+  <!-- Header -->
+  <header class="docent-header">
+    <div class="docent-avatar">
+      <img src="{{iconUri}}" alt="Docent Avatar">
+    </div>
+    <div class="docent-title-group">
+      <div class="docent-title">
+        Docent
+        <button id="btn-refresh" class="btn-refresh" title="Refresh orientation and clear cache">↻ Refresh</button>
+      </div>
+      <div id="repo-title" class="docent-subtitle">Your Codebase Guide</div>
+    </div>
+  </header>
+
+  <!-- Dynamic Status Box -->
+  <div id="status-container">
+    <div class="status-box">
+      <span class="spinner"></span>
+      <span id="status-text">Warming up Docent…</span>
+    </div>
+  </div>
+
+  <!-- Content Section (Hidden until loaded) -->
+  <main id="content-container" style="display: none;">
+    <!-- Welcome Narration Card -->
+    <section class="section-card">
+      <div class="section-title">
+        <span>Orientation Tour</span>
+        <span id="mode-badge" class="pill" style="font-size: 0.7em;">Static Mode</span>
+      </div>
+      <div id="narration-content" class="narration-text"></div>
+    </section>
+
+    <!-- Danger Zones Card -->
+    <section id="danger-card" class="section-card" style="display: none;">
+      <div class="section-title">
+        <span>⚠️ Danger Zones</span>
+        <span id="danger-count" class="pill" style="color: #fca5a5; border-color: rgba(239, 68, 68, 0.3);">0 files</span>
+      </div>
+      <div id="danger-list" class="danger-list"></div>
+    </section>
+
+    <!-- Stats Card -->
+    <section class="section-card">
+      <div class="section-title">
+        <span>Repository Vital Signs</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div id="stat-files" class="stat-value">0</div>
+          <div class="stat-label">Tracked Files</div>
+        </div>
+        <div class="stat-item">
+          <div id="stat-commits" class="stat-value">0</div>
+          <div class="stat-label">Commits</div>
+        </div>
+        <div class="stat-item">
+          <div id="stat-contributors" class="stat-value">0</div>
+          <div class="stat-label">Contributors</div>
+        </div>
+        <div class="stat-item">
+          <div id="stat-version" class="stat-value">-</div>
+          <div class="stat-label">Manifest Version</div>
+        </div>
+      </div>
+      
+      <div class="stat-label" style="margin-top: 8px;">Top File Types:</div>
+      <div id="file-pills" class="pills-wrap"></div>
+    </section>
+  </main>
+
+  <footer class="footer-bar">
+    <span id="api-status-note">Tip: Run <strong>Docent: Set API Key</strong> for AI-powered prose.</span>
+  </footer>
+
+  <script nonce="{{nonce}}">
+    const vscode = acquireVsCodeApi();
+
+    const statusContainer = document.getElementById('status-container');
+    const statusText = document.getElementById('status-text');
+    const contentContainer = document.getElementById('content-container');
+    const narrationContent = document.getElementById('narration-content');
+    const modeBadge = document.getElementById('mode-badge');
+    const dangerCard = document.getElementById('danger-card');
+    const dangerList = document.getElementById('danger-list');
+    const dangerCount = document.getElementById('danger-count');
+    const repoTitle = document.getElementById('repo-title');
+    const statFiles = document.getElementById('stat-files');
+    const statCommits = document.getElementById('stat-commits');
+    const statContributors = document.getElementById('stat-contributors');
+    const statVersion = document.getElementById('stat-version');
+    const filePills = document.getElementById('file-pills');
+    const btnRefresh = document.getElementById('btn-refresh');
+
+    btnRefresh.addEventListener('click', () => {
+      vscode.postMessage({ type: 'refresh' });
+    });
+
+    // Simple markdown-to-HTML parser (escaped and safe)
+    function renderMarkdown(md) {
+      if (!md) return '';
+      let html = md
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      // Bold **text**
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      // Inline code `code`
+      html = html.replace(/`([^`]+)`/g, '<code style="background: rgba(255,255,255,0.08); padding: 1px 4px; border-radius: 3px; font-family: monospace;">$1</code>');
+      
+      // Paragraphs
+      const paragraphs = html.split(/\n\s*\n/);
+      return paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+    }
+
+    // Message listener
+    window.addEventListener('message', event => {
+      const message = event.data;
+      switch (message.type) {
+        case 'status':
+          statusContainer.style.display = 'block';
+          statusText.textContent = message.text;
+          break;
+
+        case 'error':
+          statusContainer.innerHTML = `<div class="status-box error">⚠️ ${message.text}</div>`;
+          break;
+
+        case 'welcome':
+          statusContainer.style.display = 'none';
+          contentContainer.style.display = 'block';
+
+          repoTitle.textContent = message.repoMeta.name + (message.repoMeta.version ? ` v${message.repoMeta.version}` : '');
+          narrationContent.innerHTML = renderMarkdown(message.text);
+
+          if (message.isStatic) {
+            modeBadge.textContent = 'Static Mode';
+            modeBadge.style.color = '#f59e0b';
+            modeBadge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+          } else {
+            modeBadge.textContent = 'AI Narration';
+            modeBadge.style.color = '#38bdf8';
+            modeBadge.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+          }
+
+          // Vital signs
+          statFiles.textContent = message.repoMeta.totalFiles || 0;
+          statCommits.textContent = message.totalCommits || 0;
+          statContributors.textContent = message.contributors || 0;
+          statVersion.textContent = message.repoMeta.version ? `v${message.repoMeta.version}` : 'N/A';
+
+          // Danger zones
+          if (message.dangerZones && message.dangerZones.length > 0) {
+            dangerCard.style.display = 'block';
+            dangerCount.textContent = `${message.dangerZones.length} file${message.dangerZones.length > 1 ? 's' : ''}`;
+            dangerList.innerHTML = message.dangerZones.map(dz => `
+              <div class="danger-item">
+                <div class="danger-header">
+                  <span class="danger-file">${dz.filePath}</span>
+                  <span class="danger-badge">${dz.commitCount} commits</span>
+                </div>
+                <div class="danger-reason">${dz.reason}</div>
+              </div>
+            `).join('');
+          } else {
+            dangerCard.style.display = 'none';
+          }
+
+          // File breakdown pills
+          if (message.fileBreakdown && message.fileBreakdown.length > 0) {
+            filePills.innerHTML = message.fileBreakdown.map(([ext, count]) => `
+              <span class="pill">${ext}: ${count}</span>
+            `).join('');
+          } else {
+            filePills.innerHTML = '<span class="pill">No files tracked</span>';
+          }
+          break;
+      }
+    });
+
+    // Notify extension host that webview is ready
+    vscode.postMessage({ type: 'ready' });
+  </script>
+</body>
+</html>
