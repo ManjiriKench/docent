@@ -10,12 +10,35 @@ import { RepoScanner } from '../../docent/scanner';
 suite('Docent Extension Test Suite', () => {
   vscode.window.showInformationMessage('Start all tests.');
 
-  test('Extension activation degrades gracefully in bare environment', async () => {
+  test('Extension activation registers all docent commands including selectProvider', async () => {
     // Check if docent commands are registered
     const allCommands = await vscode.commands.getCommands(true);
+    assert.ok(allCommands.includes('docent.selectProvider'), 'docent.selectProvider command should be registered');
     assert.ok(allCommands.includes('docent.setApiKey'), 'docent.setApiKey command should be registered');
     assert.ok(allCommands.includes('docent.refreshExplanations'), 'docent.refreshExplanations command should be registered');
     assert.ok(allCommands.includes('docent.openSidebar'), 'docent.openSidebar command should be registered');
+  });
+
+  test('LLMClient with local provider isConfigured returns true without API keys', async () => {
+    const mockSecrets: vscode.SecretStorage = {
+      get: async () => undefined,
+      store: async () => {},
+      delete: async () => {},
+      keys: async () => [],
+      onDidChange: new vscode.EventEmitter<vscode.SecretStorageChangeEvent>().event,
+    };
+
+    const mockConfig = {
+      get: (key: string, defaultValue?: any) => {
+        if (key === 'llmProvider') return 'local';
+        return defaultValue;
+      },
+    } as unknown as vscode.WorkspaceConfiguration;
+
+    const { LLMClient } = await import('../../docent/llmClient');
+    const client = new LLMClient(mockSecrets, mockConfig);
+    const configured = await client.isConfigured();
+    assert.strictEqual(configured, true, 'Local provider must be configured without needing cloud API keys');
   });
 
   test('DocentCache computeHash produces deterministic SHA-256 slice', () => {
