@@ -26,6 +26,10 @@
   "contributes": {
     "commands": [
       {
+        "command": "docent.selectProvider",
+        "title": "Docent: Select LLM Provider (Local / Anthropic / Static)"
+      },
+      {
         "command": "docent.setApiKey",
         "title": "Docent: Set API Key"
       },
@@ -63,20 +67,40 @@
         "docent.llmProvider": {
           "type": "string",
           "enum": [
+            "local",
             "anthropic"
           ],
-          "default": "anthropic",
-          "description": "The LLM provider to use for generating explanations."
+          "default": "local",
+          "description": "The LLM provider to use: 'local' (Ollama / custom local model) or 'anthropic' (Cloud API)."
+        },
+        "docent.localEndpoint": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "The base URL for your local LLM server (e.g. http://localhost:11434 for Ollama or http://localhost:1234 for LM Studio)."
+        },
+        "docent.localModel": {
+          "type": "string",
+          "default": "docent-custom",
+          "description": "The model name running in your local LLM server (e.g. docent-custom, qwen2.5-coder:1.5b, llama3.2:3b, qwen2.5-coder:7b)."
+        },
+        "docent.localApiFormat": {
+          "type": "string",
+          "enum": [
+            "ollama",
+            "openai-compatible"
+          ],
+          "default": "ollama",
+          "description": "API format of your local server: 'ollama' (/api/chat) or 'openai-compatible' (/v1/chat/completions)."
         },
         "docent.llmModel": {
           "type": "string",
           "default": "claude-3-5-haiku-20241022",
-          "description": "The Anthropic model to use. claude-3-5-haiku-20241022 is fast and cheap; claude-3-5-sonnet-20241022 produces richer prose."
+          "description": "The Anthropic model to use if docent.llmProvider is set to anthropic."
         },
         "docent.welcomeModel": {
           "type": "string",
           "default": "claude-3-5-sonnet-20241022",
-          "description": "The Anthropic model to use for the sidebar welcome narration (can differ from hover model)."
+          "description": "The Anthropic model to use for the sidebar welcome narration when using Anthropic provider."
         },
         "docent.hoverExplanations": {
           "type": "boolean",
@@ -100,7 +124,7 @@
         "docent.staticAnalysisOnly": {
           "type": "boolean",
           "default": false,
-          "description": "Never send code to the LLM — use static analysis only. Useful for privacy-conscious users or air-gapped environments."
+          "description": "Never send code to any LLM — use static analysis only. Useful for offline environments or minimal resource usage."
         }
       }
     }

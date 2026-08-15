@@ -62,27 +62,49 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const cache = new DocentCache(context.workspaceState);
   const llmClient = new LLMClient(context.secrets, config);
 
-  // ── First-run API key check ────────────────────────────────────────────────
-  const hasPromptedKey = context.globalState.get<boolean>('docent.hasPromptedApiKey', false);
-  const hasKey = await llmClient.isConfigured();
+  // ── First-run check ────────────────────────────────────────────────────────
+  const hasPrompted = context.globalState.get<boolean>('docent.hasPromptedSetup', false);
+  const provider = llmClient.getProvider();
   const staticOnly = config.get<boolean>('staticAnalysisOnly', false);
 
-  if (!hasPromptedKey && !hasKey && !staticOnly) {
-    // Prompt once non-intrusively
-    void context.globalState.update('docent.hasPromptedApiKey', true);
-    void vscode.window.showInformationMessage(
-      'Docent is ready! To unlock AI-powered codebase narrations, configure your Anthropic API key.',
-      'Set API Key',
-      'Use Static Mode'
-    ).then(async (selection) => {
-      if (selection === 'Set API Key') {
-        const saved = await llmClient.promptApiKey();
-        if (saved) {
-          vscode.window.showInformationMessage('Docent: API key saved securely! Refreshing orientation…');
-          void sidebarProvider.refresh();
+  if (!hasPrompted && !staticOnly) {
+    void context.globalState.update('docent.hasPromptedSetup', true);
+    if (provider === 'local') {
+      void llmClient.checkLocalConnection().then((status) => {
+        if (!status.ok) {
+          vscode.window.showInformationMessage(
+            'Docent is configured to use your Local Model (Ollama). Start Ollama ("ollama serve") to enable AI explanations, or choose another provider.',
+            'Select Provider',
+            'Dismiss'
+          ).then((sel) => {
+            if (sel === 'Select Provider') {
+              void vscode.commands.executeCommand('docent.selectProvider');
+            }
+          });
         }
+      });
+    } else if (provider === 'anthropic') {
+      const hasKey = await llmClient.isConfigured();
+      if (!hasKey) {
+        void vscode.window.showInformationMessage(
+          'Docent: To use Anthropic Claude, please configure your API key, or switch to a free Local Model.',
+          'Set API Key',
+          'Use Local Model (Free)'
+        ).then(async (selection) => {
+          if (selection === 'Set API Key') {
+            const saved = await llmClient.promptApiKey();
+            if (saved) {
+              vscode.window.showInformationMessage('Docent: API key saved securely!');
+              void sidebarProvider.refresh();
+            }
+          } else if (selection === 'Use Local Model (Free)') {
+            await config.update('docent.llmProvider', 'local', vscode.ConfigurationTarget.Global);
+            vscode.window.showInformationMessage('Docent: Switched to Local Model provider.');
+            void sidebarProvider.refresh();
+          }
+        });
       }
-    });
+    }
   }
 
   // ── Sidebar Provider ───────────────────────────────────────────────────────
@@ -122,6 +144,70 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   // ── Commands ───────────────────────────────────────────────────────────────
 
+  // Command: Select Provider (Local / Anthropic / Static)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('docent.selectProvider', async () => {
+      const currentProvider = llmClient.getProvider();
+      const currentStatic = config.get<boolean>('staticAnalysisOnly', false);
+
+      const items: (vscode.QuickPickItem & { providerValue: 'local' | 'anthropic' | 'static' })[] = [
+        {
+          label: '$(chip) Local Custom Model (Ollama / Self-Hosted)',
+          description: currentProvider === 'local' && !currentStatic ? 'Currently active' : '',
+          detail: '100% Free, Private & Offline. Runs on your machine with zero API keys or billing limits.',
+          providerValue: 'local',
+        },
+        {
+          label: '$(cloud) Anthropic Claude (Cloud API)',
+          description: currentProvider === 'anthropic' && !currentStatic ? 'Currently active' : '',
+          detail: 'Uses Claude 3.5 Haiku / Sonnet via Anthropic API key.',
+          providerValue: 'anthropic',
+        },
+        {
+          label: '$(shield) Static Analysis Only (Offline / Zero Model)',
+          description: currentStatic ? 'Currently active' : '',
+          detail: 'Never calls any LLM. Generates instant structural codebase summaries.',
+          providerValue: 'static',
+        },
+      ];
+
+      const selected = await vscode.window.showQuickPick(items, {
+        title: 'Docent: Select LLM Provider',
+        placeHolder: 'Choose how Docent should generate explanations',
+      });
+
+      if (!selected) {
+        return;
+      }
+
+      const cfg = vscode.workspace.getConfiguration('docent');
+
+      if (selected.providerValue === 'static') {
+        await cfg.update('staticAnalysisOnly', true, vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage('Docent: Switched to Static Analysis mode.');
+      } else if (selected.providerValue === 'local') {
+        await cfg.update('staticAnalysisOnly', false, vscode.ConfigurationTarget.Global);
+        await cfg.update('docent.llmProvider', 'local', vscode.ConfigurationTarget.Global);
+        const status = await llmClient.checkLocalConnection();
+        if (status.ok) {
+          vscode.window.showInformationMessage(`Docent: Switched to Local Model. Connected to ${status.endpoint} (${status.model}).`);
+        } else {
+          vscode.window.showWarningMessage(`Docent: Switched to Local Model. ${status.message}`);
+        }
+      } else if (selected.providerValue === 'anthropic') {
+        await cfg.update('staticAnalysisOnly', false, vscode.ConfigurationTarget.Global);
+        await cfg.update('docent.llmProvider', 'anthropic', vscode.ConfigurationTarget.Global);
+        const hasKey = await llmClient.isConfigured();
+        if (!hasKey) {
+          await llmClient.promptApiKey();
+        }
+        vscode.window.showInformationMessage('Docent: Switched to Anthropic Claude provider.');
+      }
+
+      await sidebarProvider.refresh();
+    })
+  );
+
   // Command: Set API Key
   context.subscriptions.push(
     vscode.commands.registerCommand('docent.setApiKey', async () => {
@@ -152,3 +238,4 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 export function deactivate(): void {
   // Clean-up if needed
 }
+
