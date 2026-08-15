@@ -1,0 +1,130 @@
+{
+  "name": "docent",
+  "displayName": "Docent",
+  "description": "A friendly, character-voiced guide to any codebase — automatically generated from the code itself.",
+  "version": "0.0.1",
+  "publisher": "docent",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Education"
+  ],
+  "keywords": [
+    "onboarding",
+    "documentation",
+    "AI",
+    "codebase",
+    "guide"
+  ],
+  "icon": "media/docent-marketplace-icon.png",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "docent.setApiKey",
+        "title": "Docent: Set API Key"
+      },
+      {
+        "command": "docent.refreshExplanations",
+        "title": "Docent: Refresh Explanations"
+      },
+      {
+        "command": "docent.openSidebar",
+        "title": "Docent: Open Sidebar"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "docentContainer",
+          "title": "Docent",
+          "icon": "media/docent-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "docentContainer": [
+        {
+          "type": "webview",
+          "id": "docentView",
+          "name": "Docent",
+          "when": "true"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Docent",
+      "properties": {
+        "docent.llmProvider": {
+          "type": "string",
+          "enum": [
+            "anthropic"
+          ],
+          "default": "anthropic",
+          "description": "The LLM provider to use for generating explanations."
+        },
+        "docent.llmModel": {
+          "type": "string",
+          "default": "claude-3-5-haiku-20241022",
+          "description": "The Anthropic model to use. claude-3-5-haiku-20241022 is fast and cheap; claude-3-5-sonnet-20241022 produces richer prose."
+        },
+        "docent.welcomeModel": {
+          "type": "string",
+          "default": "claude-3-5-sonnet-20241022",
+          "description": "The Anthropic model to use for the sidebar welcome narration (can differ from hover model)."
+        },
+        "docent.hoverExplanations": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inline hover explanations on named function and class declarations."
+        },
+        "docent.hoverFileExtensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            ".ts",
+            ".js",
+            ".tsx",
+            ".jsx",
+            ".py"
+          ],
+          "description": "File extensions for which hover explanations are active."
+        },
+        "docent.staticAnalysisOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "Never send code to the LLM — use static analysis only. Useful for privacy-conscious users or air-gapped environments."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "node esbuild.js --production",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "pretest": "node esbuild.js",
+    "test": "node ./dist-test/test/runTest.js",
+    "compile-tests": "tsc -p tsconfig.test.json --outDir dist-test",
+    "watch-tests": "tsc -p tsconfig.test.json --outDir dist-test --watch",
+    "lint": "eslint src --ext ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.3.8",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "simple-git": "^3.22.0"
+  }
+}

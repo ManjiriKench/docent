@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "node esbuild.js",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$esbuild"
+    },
+    {
+      "label": "watch",
+      "type": "shell",
+      "command": "node esbuild.js --watch",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": "$esbuild-watch"
+    },
+    {
+      "label": "compile-tests",
+      "type": "shell",
+      "command": "tsc -p tsconfig.test.json --outDir dist-test",
+      "group": "build",
+      "problemMatcher": "$tsc"
+    }
+  ]
+}
