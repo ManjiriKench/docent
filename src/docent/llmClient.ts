@@ -50,9 +50,24 @@ export class LLMClient {
 
   // ── Key management ───────────────────────────────────────────────────────────
 
-  async isConfigured(): Promise<boolean> {
+  async getApiKey(): Promise<string | undefined> {
+    // 1. Check process.env (e.g. loaded from .env)
+    if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim().length > 0) {
+      return process.env.ANTHROPIC_API_KEY.trim();
+    }
+
+    // 2. Check VS Code SecretStorage
     const key = await this.secrets.get(SECRET_KEY);
-    return !!key && key.trim().length > 0;
+    if (key && key.trim().length > 0) {
+      return key.trim();
+    }
+
+    return undefined;
+  }
+
+  async isConfigured(): Promise<boolean> {
+    const key = await this.getApiKey();
+    return !!key;
   }
 
   /**
@@ -190,7 +205,7 @@ export class LLMClient {
     maxTokens: number,
     timeoutMs: number
   ): Promise<string> {
-    const apiKey = await this.secrets.get(SECRET_KEY);
+    const apiKey = await this.getApiKey();
     if (!apiKey) {
       throw new Error('No API key configured');
     }

@@ -6,3 +6,5 @@ dist-test/
 *.vsix
 *.log
 .DS_Store
+.env
+.env.*

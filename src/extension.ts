@@ -7,16 +7,48 @@
  */
 
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 import { LLMClient } from './docent/llmClient';
 import { DocentCache } from './docent/cache';
 import { SidebarProvider } from './views/sidebarProvider';
 import { DocentHoverProvider, buildDocumentSelector } from './views/hoverProvider';
 
+function loadEnvFile(dirPath: string): void {
+  const envPath = path.join(dirPath, '.env');
+  if (fs.existsSync(envPath)) {
+    try {
+      const content = fs.readFileSync(envPath, 'utf8');
+      for (const line of content.split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const eqIdx = trimmed.indexOf('=');
+        if (eqIdx !== -1) {
+          const key = trimmed.slice(0, eqIdx).trim();
+          const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+          if (key && val && !process.env[key]) {
+            process.env[key] = val;
+          }
+        }
+      }
+    } catch {
+      // Ignore reading error
+    }
+  }
+}
+
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  // Load .env from extension directory or workspace root
+  loadEnvFile(context.extensionUri.fsPath);
+
   const workspaceFolders = vscode.workspace.workspaceFolders;
   const workspaceRoot = workspaceFolders && workspaceFolders.length > 0
     ? workspaceFolders[0].uri.fsPath
     : undefined;
+
+  if (workspaceRoot) {
+    loadEnvFile(workspaceRoot);
+  }
 
   const config = vscode.workspace.getConfiguration('docent');
   const cache = new DocentCache(context.workspaceState);
