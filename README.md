@@ -19,12 +19,6 @@ Orienting yourself in an unfamiliar repository usually takes hours of clicking a
 
 ---
 
-## 📸 Preview
-
-![Docent Sidebar Preview](https://raw.githubusercontent.com/ManjiriKench/docent/main/media/docent-character.svg)
-
----
-
 ## 🚀 Quick Start
 
 1. Install the Docent extension in VS Code.

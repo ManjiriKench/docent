@@ -4,6 +4,10 @@
   "description": "A friendly, character-voiced guide to any codebase — automatically generated from the code itself.",
   "version": "0.0.1",
   "publisher": "docent",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ManjiriKench/docent.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -18,7 +22,6 @@
     "codebase",
     "guide"
   ],
-  "icon": "media/docent-marketplace-icon.png",
   "activationEvents": [
     "onStartupFinished"
   ],
