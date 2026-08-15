@@ -9,5 +9,8 @@ tsconfig.json
 tsconfig.test.json
 .eslintrc.json
 .gitignore
+.env
+.env.*
 *.vsix
 **/*.map
+training/*.jsonl
