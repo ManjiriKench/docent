@@ -91,16 +91,20 @@ export class DocentHoverProvider implements vscode.HoverProvider {
     // Cache key: symbol name + file content hash + mtime
     const cacheHash = this.cache.computeHash(`${symbol.name}::${fileContent}`, mtime);
 
-    // Check cache first — return immediately if hit
+    // Check cache first — return immediately if hit (unless it was a stale static message and we now have a key)
+    const isConfigured = await this.llmClient.isConfigured();
     const cached = this.cache.getCachedHover(cacheHash);
     if (cached) {
-      if (token.isCancellationRequested) {
-        return null;
+      const isStaleStatic = cached.includes('needs an API key') && isConfigured;
+      if (!isStaleStatic) {
+        if (token.isCancellationRequested) {
+          return null;
+        }
+        return this.buildHover(cached, symbol.name);
       }
-      return this.buildHover(cached, symbol.name);
     }
 
-    // No cache — show thinking state, then resolve
+    // No cache or stale static cache — resolve
     if (token.isCancellationRequested) {
       return null;
     }
@@ -116,8 +120,10 @@ export class DocentHoverProvider implements vscode.HoverProvider {
         return null;
       }
 
-      // Cache the result for next time
-      void this.cache.setCachedHover(cacheHash, explanation);
+      // Cache the result only if it's a genuine AI explanation
+      if (isConfigured && !explanation.includes('needs an API key')) {
+        void this.cache.setCachedHover(cacheHash, explanation);
+      }
 
       return this.buildHover(explanation, symbol.name);
     } catch {

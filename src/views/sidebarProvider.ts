@@ -159,14 +159,21 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
       // Check cache first
       let welcomeText = this.cache.getCachedWelcome(cacheHash);
+      const isConfigured = await this.llmClient.isConfigured();
+      if (welcomeText && welcomeText.includes('static analysis') && isConfigured) {
+        welcomeText = undefined; // Invalidate previous static cache
+      }
+
       let isStatic = false;
 
       if (!welcomeText) {
         welcomeText = await this.llmClient.generateWelcome(repoCtx, gitCtx);
-        // Detect if it's static (no key configured or static-only mode)
-        isStatic = !(await this.llmClient.isConfigured()) ||
-          welcomeText.includes('static analysis');
-        await this.cache.setCachedWelcome(cacheHash, welcomeText);
+        isStatic = !isConfigured || welcomeText.includes('static analysis');
+        if (!isStatic) {
+          await this.cache.setCachedWelcome(cacheHash, welcomeText);
+        }
+      } else {
+        isStatic = !isConfigured || welcomeText.includes('static analysis');
       }
 
       // Serialise danger zones (generate LLM notes for top 5)

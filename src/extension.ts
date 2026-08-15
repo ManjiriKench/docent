@@ -14,40 +14,48 @@ import { DocentCache } from './docent/cache';
 import { SidebarProvider } from './views/sidebarProvider';
 import { DocentHoverProvider, buildDocumentSelector } from './views/hoverProvider';
 
-function loadEnvFile(dirPath: string): void {
-  const envPath = path.join(dirPath, '.env');
-  if (fs.existsSync(envPath)) {
-    try {
-      const content = fs.readFileSync(envPath, 'utf8');
-      for (const line of content.split('\n')) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) continue;
-        const eqIdx = trimmed.indexOf('=');
-        if (eqIdx !== -1) {
-          const key = trimmed.slice(0, eqIdx).trim();
-          const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
-          if (key && val && !process.env[key]) {
-            process.env[key] = val;
+function loadEnvFile(candidatePaths: (string | undefined)[]): void {
+  for (const dirPath of candidatePaths) {
+    if (!dirPath) continue;
+    const envPath = path.join(dirPath, '.env');
+    if (fs.existsSync(envPath)) {
+      try {
+        const content = fs.readFileSync(envPath, 'utf8');
+        for (const line of content.split('\n')) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx !== -1) {
+            const key = trimmed.slice(0, eqIdx).trim();
+            const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+            if (key && val) {
+              process.env[key] = val;
+            }
           }
         }
+      } catch (err) {
+        console.error('[Docent] Failed to read .env from ' + envPath, err);
       }
-    } catch {
-      // Ignore reading error
     }
   }
 }
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  // Load .env from extension directory or workspace root
-  loadEnvFile(context.extensionUri.fsPath);
-
   const workspaceFolders = vscode.workspace.workspaceFolders;
   const workspaceRoot = workspaceFolders && workspaceFolders.length > 0
     ? workspaceFolders[0].uri.fsPath
     : undefined;
 
-  if (workspaceRoot) {
-    loadEnvFile(workspaceRoot);
+  // Search extension root, dist parent, extensionPath, and workspaceRoot for .env
+  loadEnvFile([
+    context.extensionUri?.fsPath,
+    context.extensionPath,
+    path.resolve(__dirname, '..'),
+    workspaceRoot,
+  ]);
+
+  if (process.env.ANTHROPIC_API_KEY) {
+    console.log('[Docent] ANTHROPIC_API_KEY detected and loaded successfully.');
   }
 
   const config = vscode.workspace.getConfiguration('docent');
