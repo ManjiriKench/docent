@@ -104,10 +104,16 @@ export class GitAnalyzer {
    */
   async getCommitCount(): Promise<number> {
     try {
-      const log = await this.git.log(['--oneline']);
-      return log.total;
+      const countStr = await this.git.raw(['rev-list', '--count', 'HEAD']);
+      const count = parseInt(countStr.trim(), 10);
+      return isNaN(count) ? 0 : count;
     } catch {
-      return 0;
+      try {
+        const log = await this.git.log();
+        return log.total;
+      } catch {
+        return 0;
+      }
     }
   }
 

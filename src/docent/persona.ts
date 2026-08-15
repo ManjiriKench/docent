@@ -52,9 +52,10 @@ export const STATIC_WELCOME_TEMPLATE = (
   topFiles: string[]
 ): string => {
   const depList = topDeps.length > 0 ? `Key dependencies include ${topDeps.slice(0, 4).join(', ')}.` : '';
+  const commitLabel = totalCommits === 1 ? '1 commit' : `${totalCommits} commits`;
   const contribLine = contributors > 1
-    ? `${contributors} contributors have touched this codebase over ${totalCommits} commits.`
-    : `This appears to be a solo project with ${totalCommits} commits on record.`;
+    ? `${contributors} contributors have touched this codebase over ${commitLabel}.`
+    : `This appears to be a solo project with ${commitLabel} on record.`;
   const heartFile = topFiles.length > 0 ? ` The most-changed file is ${topFiles[0]} — probably worth knowing where that is.` : '';
 
   return `Welcome to **${projectName}**. This is Docent's static analysis — no LLM key is configured, so you're getting the facts without the narration.
