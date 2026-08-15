@@ -58,14 +58,14 @@ export const STATIC_WELCOME_TEMPLATE = (
     : `This appears to be a solo project with ${commitLabel} on record.`;
   const heartFile = topFiles.length > 0 ? ` The most-changed file is ${topFiles[0]} — probably worth knowing where that is.` : '';
 
-  return `Welcome to **${projectName}**. This is Docent's static analysis — no LLM key is configured, so you're getting the facts without the narration.
+  return `Welcome to **${projectName}**. This is Docent's static analysis — no LLM is currently responding, so you're getting the facts without the narration.
 
 The repo has ${folderCount} top-level folders and ${fileCount} tracked files. ${depList}
 
 ${contribLine}${heartFile}
 
-To get the full guided tour — including a natural-language walkthrough of what this project does and where to start — add your Anthropic API key via the command palette: **Docent: Set API Key**.`;
+To enable full AI codebase narrations, start your local model (**\`ollama serve\`**) or switch providers with **\`Docent: Select LLM Provider\`** in the command palette.`;
 };
 
 export const STATIC_HOVER_TEMPLATE = (symbolName: string): string =>
-  `**${symbolName}** — Docent needs an API key to generate a full explanation. Run \`Docent: Set API Key\` from the command palette to enable hover narrations.`;
+  `**${symbolName}** — Start your local model (\`ollama serve\`) or run \`Docent: Select LLM Provider\` from the command palette to enable rich AI hover explanations.`;
